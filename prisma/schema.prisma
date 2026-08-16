@@ -24,9 +24,9 @@ model Category {
   name        String    @unique
   slug        String    @unique
   description String?
-  artworks    Artwork[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  artworks    Artwork[]
 
   @@map("categories")
 }
@@ -35,7 +35,7 @@ model Artwork {
   id          String         @id @default(cuid())
   title       String
   slug        String         @unique
-  description String?        @db.Text
+  description String?
   price       Decimal?       @db.Decimal(10, 2)
   status      ArtworkStatus  @default(AVAILABLE)
   medium      String?
@@ -44,10 +44,10 @@ model Artwork {
   featured    Boolean        @default(false)
   tags        String[]
   categoryId  String?
-  category    Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  images      ArtworkImage[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+  images      ArtworkImage[]
+  category    Category?      @relation(fields: [categoryId], references: [id])
 
   @@index([categoryId])
   @@index([status])
@@ -63,8 +63,8 @@ model ArtworkImage {
   isPrimary Boolean  @default(false)
   sortOrder Int      @default(0)
   artworkId String
-  artwork   Artwork  @relation(fields: [artworkId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  artwork   Artwork  @relation(fields: [artworkId], references: [id], onDelete: Cascade)
 
   @@index([artworkId])
   @@map("artwork_images")
@@ -74,7 +74,7 @@ model Testimonial {
   id        String   @id @default(cuid())
   name      String
   location  String?
-  content   String   @db.Text
+  content   String
   rating    Int?     @default(5)
   featured  Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -88,7 +88,7 @@ model ContactMessage {
   name      String
   email     String
   subject   String?
-  message   String        @db.Text
+  message   String
   status    MessageStatus @default(UNREAD)
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
@@ -108,6 +108,7 @@ model NewsletterSubscriber {
 enum Role {
   ADMIN
   SUPER_ADMIN
+  USER
 }
 
 enum ArtworkStatus {

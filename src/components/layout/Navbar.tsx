@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/contexts/UserContext";
 
 const NAV_LINKS = [
   { href: "/gallery", label: "Gallery" },
@@ -19,6 +21,8 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, setUser } = useUser();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -29,6 +33,16 @@ export default function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    toast.success("Signed out");
+    router.push("/");
+    router.refresh();
+  }
+
+  const firstName = user?.name?.split(" ")[0] ?? user?.email.split("@")[0] ?? "";
 
   return (
     <header
@@ -63,6 +77,40 @@ export default function Navbar() {
             </li>
           ))}
         </ul>
+
+        {/* Desktop auth */}
+        <div className="hidden md:flex items-center gap-3">
+          {user ? (
+            <>
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <User size={14} />
+                {firstName}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <LogOut size={14} />
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors tracking-wide"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="text-sm bg-foreground text-background px-4 h-8 inline-flex items-center tracking-wide hover:bg-foreground/90 transition-colors"
+              >
+                Register
+              </Link>
+            </>
+          )}
+        </div>
 
         {/* Mobile hamburger */}
         <button
@@ -100,6 +148,35 @@ export default function Navbar() {
                   </Link>
                 </li>
               ))}
+              <li className="pt-2 border-t border-border flex flex-col gap-3">
+                {user ? (
+                  <>
+                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <User size={14} />
+                      {firstName}
+                    </span>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-1.5 text-sm text-muted-foreground"
+                    >
+                      <LogOut size={14} />
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" className="text-base text-muted-foreground">
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="text-base font-medium text-foreground"
+                    >
+                      Create Account
+                    </Link>
+                  </>
+                )}
+              </li>
             </ul>
           </motion.div>
         )}

@@ -1,6 +1,6 @@
 export type ArtworkStatus = "AVAILABLE" | "SOLD" | "PRICE_ON_REQUEST" | "COMMISSION_OPEN";
 export type MessageStatus = "UNREAD" | "READ" | "REPLIED";
-export type UserRole = "ADMIN" | "SUPER_ADMIN";
+export type UserRole = "USER" | "ADMIN" | "SUPER_ADMIN";
 
 export interface User {
   id: string;
@@ -117,6 +117,7 @@ export interface GalleryFilters {
 export interface AuthToken {
   userId: string;
   email: string;
+  name?: string;
   role: UserRole;
   iat?: number;
   exp?: number;
