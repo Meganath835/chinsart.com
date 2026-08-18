@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import Image from "next/image";
 import { Upload, X, Star, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -36,11 +35,12 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
 
         const { presignedUrl, key } = json.data;
 
-        await fetch(presignedUrl, {
+        const s3Res = await fetch(presignedUrl, {
           method: "PUT",
           body: file,
           headers: { "Content-Type": file.type },
         });
+        if (!s3Res.ok) throw new Error(`S3 rejected the upload (${s3Res.status})`);
 
         return { key, url: getImageUrl(key), isPrimary: value.length === 0 };
       } catch (err) {
@@ -126,7 +126,8 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {value.map((img) => (
             <div key={img.key} className="relative group aspect-square bg-muted overflow-hidden">
-              <Image src={img.url} alt="" fill sizes="120px" className="object-cover" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={img.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
 
               {/* Primary star */}
               <button

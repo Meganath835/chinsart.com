@@ -1,5 +1,6 @@
 import type { Artwork } from "@/types";
 import type { PrismaArtwork } from "@/services/artwork.service";
+import { getImageUrl } from "@/lib/s3/client";
 
 export function mapArtwork(a: PrismaArtwork): Artwork {
   return {
@@ -26,7 +27,7 @@ export function mapArtwork(a: PrismaArtwork): Artwork {
       : null,
     images: a.images.map((img) => ({
       id: img.id,
-      url: img.url,
+      url: getImageUrl(img.key),
       key: img.key,
       alt: img.alt,
       isPrimary: img.isPrimary,
