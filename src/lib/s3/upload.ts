@@ -1,5 +1,4 @@
 import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client, BUCKET_NAME, getImageUrl } from "./client";
 import { randomUUID } from "crypto";
 
@@ -30,15 +29,3 @@ export async function deleteImageFromS3(key: string): Promise<void> {
   );
 }
 
-export async function getPresignedUploadUrl(
-  key: string,
-  contentType: string,
-  expiresIn = 300
-): Promise<string> {
-  const command = new PutObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: key,
-    ContentType: contentType,
-  });
-  return getSignedUrl(s3Client, command, { expiresIn });
-}

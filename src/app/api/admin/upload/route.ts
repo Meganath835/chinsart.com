@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import { requireSession } from "@/lib/auth/session";
-import { getPresignedUploadUrl } from "@/lib/s3/upload";
+import { uploadImageToS3 } from "@/lib/s3/upload";
 import { ok, badRequest, unauthorized, serverError } from "@/lib/api-response";
-import { randomUUID } from "crypto";
+
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,18 +14,25 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { fileName, contentType } = await req.json();
-    if (!fileName || !contentType) return badRequest("fileName and contentType required");
+    const form = await req.formData();
+    const file = form.get("file");
 
-    const allowed = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-    if (!allowed.includes(contentType)) return badRequest("Only JPEG, PNG and WebP images are allowed");
+    if (!file || !(file instanceof File)) {
+      return badRequest("file is required");
+    }
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return badRequest("Only JPEG, PNG and WebP images are allowed");
+    }
+    if (file.size > MAX_SIZE) {
+      return badRequest("File must be 10MB or smaller");
+    }
 
-    const ext = fileName.split(".").pop()?.toLowerCase() ?? "jpg";
-    const key = `artworks/${randomUUID()}.${ext}`;
-    const presignedUrl = await getPresignedUploadUrl(key, contentType);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const { url, key } = await uploadImageToS3(buffer, file.name, file.type);
 
-    return ok({ presignedUrl, key });
-  } catch {
-    return serverError("Failed to generate upload URL");
+    return ok({ url, key });
+  } catch (err) {
+    console.error("[upload]", err);
+    return serverError("Failed to upload image");
   }
 }

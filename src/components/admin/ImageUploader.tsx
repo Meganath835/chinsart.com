@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from "react";
 import { Upload, X, Star, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { getImageUrl } from "@/lib/s3/client";
 
 export interface UploadedImage {
   key: string;
@@ -25,26 +24,23 @@ export default function ImageUploader({ value, onChange }: ImageUploaderProps) {
   const uploadFile = useCallback(
     async (file: File): Promise<UploadedImage | null> => {
       try {
+        const formData = new FormData();
+        formData.append("file", file);
+
         const res = await fetch("/api/admin/upload", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: file.name, contentType: file.type }),
+          body: formData,
         });
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Failed to get upload URL");
+        if (!res.ok) throw new Error(json.error ?? "Failed to upload image");
 
-        const { presignedUrl, key } = json.data;
+        const { key, url } = json.data;
 
-        const s3Res = await fetch(presignedUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type },
-        });
-        if (!s3Res.ok) throw new Error(`S3 rejected the upload (${s3Res.status})`);
-
-        return { key, url: getImageUrl(key), isPrimary: value.length === 0 };
+        return { key, url, isPrimary: value.length === 0 };
       } catch (err) {
-        toast.error(`Failed to upload ${file.name}`);
+        const msg = err instanceof Error ? err.message : "Upload failed";
+        console.error("[uploadFile]", msg);
+        toast.error(msg);
         return null;
       }
     },
